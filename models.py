@@ -1,14 +1,15 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy import Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column
 
 db = SQLAlchemy()
 
 class User(UserMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    password_hash = db.Column(db.String(255))  # Increased from 128 to 255
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    username: Mapped[str] = mapped_column(String(80), unique=True, nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(255))  # Increased from 128 to 255
 
     def __init__(self, username):
         self.username = username
@@ -32,12 +33,12 @@ class User(UserMixin, db.Model):
         db.session.commit()
 
 class Video(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    youtube_id = db.Column(db.String(20), unique=True, nullable=False)
-    title = db.Column(db.String(200), nullable=False)
-    full_transcript = db.Column(db.Text)
-    summary = db.Column(db.Text)
-    chunks = db.Column(db.Text)  # Changed from ARRAY(db.Text) to db.Text
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    youtube_id: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    full_transcript: Mapped[str] = mapped_column(Text)
+    summary: Mapped[str] = mapped_column(Text)
+    chunks: Mapped[str] = mapped_column(Text)  # Changed from ARRAY(db.Text) to Text
 
     def __init__(self, youtube_id, title, full_transcript, summary, chunks):
         self.youtube_id = youtube_id

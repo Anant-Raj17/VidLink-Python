@@ -8,8 +8,11 @@ from groq import Groq
 import os
 from dotenv import load_dotenv
 from flask_cors import CORS
+from markdown2 import Markdown
 
 load_dotenv()  # This line is now near the top of the file
+
+markdowner = Markdown()
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "fallback_secret_key")
@@ -115,11 +118,14 @@ def ask_question():
 
         video_summaries = [f"Video: {video.title}\nSummary: {video.summary}" for video in videos]
 
-        prompt = f"You have access to summaries of multiple YouTube videos. Analyze each video summary separately to answer the following question:\n\n"
-        prompt += f"Question: {question}\n\n"
-        prompt += "Video Summaries:\n"
-        prompt += "\n\n".join(video_summaries)
-        prompt += "\n\nPlease provide an answer based on the information from these video summaries:"
+        prompt = f"""You have access to summaries of multiple YouTube videos. Analyze each video summary separately to answer the following question:
+
+Question: {question}
+
+Video Summaries:
+{"\n\n".join(video_summaries)}
+
+Please provide an answer based on the information from these video summaries. Use Markdown formatting in your response to enhance readability. Use bullet points, emphasis, or other Markdown features as appropriate."""
 
         groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
         response = groq_client.chat.completions.create(
@@ -132,7 +138,12 @@ def ask_question():
         )
 
         answer = response.choices[0].message.content
-        return jsonify({"answer": answer}), 200
+        if answer is None:
+            return jsonify({"error": "No response generated"}), 500
+
+        html_answer = markdowner.convert(answer)
+
+        return jsonify({"answer": html_answer}), 200
     except Exception as e:
         app.logger.error(f"Error processing question: {str(e)}")
         return jsonify({"error": f"Error processing question: {str(e)}"}), 500

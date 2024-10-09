@@ -123,7 +123,13 @@ function addMessageToChat(sender, message) {
   const chatMessages = document.getElementById("chat-messages");
   const messageElement = document.createElement("div");
   messageElement.classList.add("message", `${sender}-message`);
-  messageElement.textContent = message;
+
+  if (sender === "ai") {
+    messageElement.innerHTML = message; // Use innerHTML for AI messages
+  } else {
+    messageElement.textContent = message; // Use textContent for user messages
+  }
+
   chatMessages.appendChild(messageElement);
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }
