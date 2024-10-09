@@ -123,7 +123,7 @@ def ask_question():
 Question: {question}
 
 Video Summaries:
-{"\n\n".join(video_summaries)}
+{chr(10).join(video_summaries)}
 
 Please provide an answer based on the information from these video summaries. Use Markdown formatting in your response to enhance readability. Use bullet points, emphasis, or other Markdown features as appropriate."""
 
