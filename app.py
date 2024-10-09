@@ -27,6 +27,9 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'  # type: ignore
 
+with app.app_context():
+    db.create_all()
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.get(user_id)
@@ -164,6 +167,4 @@ def delete_video_route(video_id):
         return jsonify({"error": "Video not found"}), 404
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     app.run(debug=True, host='0.0.0.0', port=8080)
