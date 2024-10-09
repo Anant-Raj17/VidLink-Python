@@ -8,7 +8,10 @@ db = SQLAlchemy()
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
-    password_hash = db.Column(db.String(128))
+    password_hash = db.Column(db.String(255))  # Increased from 128 to 255
+
+    def __init__(self, username):
+        self.username = username
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -34,7 +37,14 @@ class Video(db.Model):
     title = db.Column(db.String(200), nullable=False)
     full_transcript = db.Column(db.Text)
     summary = db.Column(db.Text)
-    chunks = db.Column(ARRAY(db.Text))
+    chunks = db.Column(db.Text)  # Changed from ARRAY(db.Text) to db.Text
+
+    def __init__(self, youtube_id, title, full_transcript, summary, chunks):
+        self.youtube_id = youtube_id
+        self.title = title
+        self.full_transcript = full_transcript
+        self.summary = summary
+        self.chunks = chunks
 
 def add_video(youtube_id, title, full_transcript, summary, chunks):
     video = Video(youtube_id=youtube_id, title=title, full_transcript=full_transcript, summary=summary, chunks=chunks)

@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, render_template, redirect, url_for
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 from models import db, User, Video, add_video, get_video, get_all_videos, delete_video
 from youtube_utils import get_video_id, get_transcript_and_process, get_video_title
 from groq import Groq
@@ -15,6 +16,7 @@ app.secret_key = os.getenv("SECRET_KEY", "fallback_secret_key")
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL", "sqlite:///vidlink.db")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
+migrate = Migrate(app, db)
 CORS(app)
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
@@ -105,20 +107,21 @@ def ask_question():
 
     question = data['question']
 
-    videos = get_all_videos()
-
-    if not videos:
-        return jsonify({"answer": "There are no videos in the database to answer questions from."}), 200
-
-    video_summaries = [f"Video: {video['title']}\nSummary: {video['summary']}" for video in videos]
-
-    prompt = f"You have access to summaries of multiple YouTube videos. Analyze each video summary separately to answer the following question:\n\n"
-    prompt += f"Question: {question}\n\n"
-    prompt += "Video Summaries:\n"
-    prompt += "\n\n".join(video_summaries)
-    prompt += "\n\nPlease provide an answer based on the information from these video summaries:"
-
     try:
+        videos = get_all_videos()
+
+        if not videos:
+            return jsonify({"answer": "There are no videos in the database to answer questions from."}), 200
+
+        video_summaries = [f"Video: {video.title}\nSummary: {video.summary}" for video in videos]
+
+        prompt = f"You have access to summaries of multiple YouTube videos. Analyze each video summary separately to answer the following question:\n\n"
+        prompt += f"Question: {question}\n\n"
+        prompt += "Video Summaries:\n"
+        prompt += "\n\n".join(video_summaries)
+        prompt += "\n\nPlease provide an answer based on the information from these video summaries:"
+
+        groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
         response = groq_client.chat.completions.create(
             messages=[
                 {"role": "system", "content": "You are an AI assistant that analyzes multiple YouTube video summaries. Your task is to answer questions by comparing and contrasting information from different videos, providing insights based on the content of each video separately."},
@@ -131,14 +134,14 @@ def ask_question():
         answer = response.choices[0].message.content
         return jsonify({"answer": answer}), 200
     except Exception as e:
-        print(f"Error in Groq API call: {str(e)}")
+        app.logger.error(f"Error processing question: {str(e)}")
         return jsonify({"error": f"Error processing question: {str(e)}"}), 500
 
 @app.route('/get_videos', methods=['GET'])
 @login_required
 def get_videos():
     videos = get_all_videos()
-    return jsonify({"videos": [{"id": str(v['_id']), "title": v['title']} for v in videos]}), 200
+    return jsonify({"videos": [{"id": str(v.id), "title": v.title} for v in videos]}), 200
 
 @app.route('/delete_video/<video_id>', methods=['DELETE'])
 @login_required

@@ -1,9 +1,12 @@
 services:
   - type: web
     name: vidlink-ai
-    env: python
+    runtime: python
+    plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    startCommand: >
+      flask db upgrade &&
+      gunicorn app:app
     envVars:
       - key: SECRET_KEY
         generateValue: true
@@ -18,5 +21,6 @@ services:
 
 databases:
   - name: vidlink-db
+    plan: free
     databaseName: vidlink
     user: vidlink

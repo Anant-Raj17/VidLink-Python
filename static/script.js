@@ -6,10 +6,17 @@ document.addEventListener("DOMContentLoaded", function () {
 async function fetchVideoList() {
   try {
     const response = await fetch("/get_videos");
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
     const data = await response.json();
     updateVideoList(data.videos);
   } catch (error) {
     console.error("Error fetching video list:", error);
+    // Display an error message to the user
+    const videoList = document.getElementById("video-list");
+    videoList.innerHTML =
+      "<p>Error loading videos. Please try again later.</p>";
   }
 }
 

@@ -1,22 +1,25 @@
-  # Environment variables
-   .env
+# Environment variables
+.env
 
-   # Python bytecode
-   __pycache__/
-   *.py[cod]
+# Python bytecode
+__pycache__/
+*.py[cod]
 
-   # Virtual environment
-   venv/
-   env/
+# Virtual environment
+venv/
+env/
 
-   # IDE specific files
-   .vscode/
-   .idea/
+# IDE specific files
+.vscode/
+.idea/
 
-   # Operating system files
-   .DS_Store
-   Thumbs.db
-   user_anant.db
-   user_shanu.db
-   user_user.db
-   youtube_transcripts.db
+# Operating system files
+.DS_Store
+Thumbs.db
+user_anant.db
+user_shanu.db
+user_user.db
+youtube_transcripts.db
+
+# Ignore migration files
+migrations/
