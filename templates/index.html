@@ -14,8 +14,12 @@
         />
     </head>
     <body>
-        <div class="container">
+        <header>
+            <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
             <h1>VidLink AI</h1>
+        </header>
+
+        <div class="container">
             <div class="content-wrapper">
                 <div id="database-container">
                     <h2>Database</h2>
@@ -66,6 +70,7 @@
                 </div>
             </div>
         </div>
+
         <script src="{{ url_for('static', filename='script.js') }}"></script>
     </body>
 </html>

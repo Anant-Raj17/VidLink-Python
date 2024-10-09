@@ -1,50 +1,56 @@
-from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy.dialects.postgresql import ARRAY
 
-Base = declarative_base()
+db = SQLAlchemy()
 
-class Video(Base):
-    __tablename__ = 'videos'
-    id = Column(Integer, primary_key=True)
-    youtube_id = Column(String(20), unique=True, nullable=False)
-    title = Column(String(200))
-    full_transcript = Column(Text)
-    summary = Column(Text)
-    chunks = relationship("SummaryChunk", back_populates="video")
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password_hash = db.Column(db.String(128))
 
-class SummaryChunk(Base):
-    __tablename__ = 'summary_chunks'
-    id = Column(Integer, primary_key=True)
-    video_id = Column(Integer, ForeignKey('videos.id'))
-    chunk_text = Column(Text)
-    video = relationship("Video", back_populates="chunks")
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
 
-engine = create_engine('sqlite:///youtube_transcripts.db')
-Base.metadata.create_all(engine)
-Session = sessionmaker(bind=engine)
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
-def add_video(session, youtube_id, title, full_transcript, summary, chunks):
-    video = Video(youtube_id=youtube_id, title=title, full_transcript=full_transcript, summary=summary)
-    session.add(video)
-    session.flush()  # This will assign an ID to the video
+    @classmethod
+    def get(cls, user_id):
+        return cls.query.get(int(user_id))
 
-    for chunk in chunks:
-        summary_chunk = SummaryChunk(video_id=video.id, chunk_text=chunk)
-        session.add(summary_chunk)
+    @classmethod
+    def get_by_username(cls, username):
+        return cls.query.filter_by(username=username).first()
 
-    session.commit()
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
 
-def get_video(session, youtube_id):
-    return session.query(Video).filter_by(youtube_id=youtube_id).first()
+class Video(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    youtube_id = db.Column(db.String(20), unique=True, nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    full_transcript = db.Column(db.Text)
+    summary = db.Column(db.Text)
+    chunks = db.Column(ARRAY(db.Text))
 
-def get_all_videos(session):
-    return session.query(Video).all()
+def add_video(youtube_id, title, full_transcript, summary, chunks):
+    video = Video(youtube_id=youtube_id, title=title, full_transcript=full_transcript, summary=summary, chunks=chunks)
+    db.session.add(video)
+    db.session.commit()
 
-def delete_video(session, video_id):
-    video = session.query(Video).get(video_id)
+def get_video(youtube_id):
+    return Video.query.filter_by(youtube_id=youtube_id).first()
+
+def get_all_videos():
+    return Video.query.all()
+
+def delete_video(video_id):
+    video = Video.query.get(video_id)
     if video:
-        session.delete(video)
-        session.commit()
+        db.session.delete(video)
+        db.session.commit()
         return True
     return False
